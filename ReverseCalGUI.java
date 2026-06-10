@@ -1,3 +1,6 @@
+import java.text.DecimalFormat;
+import java.util.ArrayDeque;
+import java.util.Random;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -6,6 +9,108 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class ReverseCalGUI extends Application {
+    private int rounds;
+    private int currentRound;
+    private int total;
+    private double base;
+    private int operationtype;
+    private double correctAnswer;
+    private int score = 0;
+
+    private String generateQuestion() {
+            // my existing code here
+            Random r = new Random();
+            int mixed = 0;
+			String questionString = "Question" + currentRound + ": " + base;
+            ArrayDeque<Double> numbers = new ArrayDeque<>();
+            ArrayDeque<Character> operators = new ArrayDeque<>();
+            numbers.push(base);
+
+			for (int i1 = 0; i1 < total - 1; i1++){
+				double randomNum = -10000 + r.nextInt(20001);
+				while(randomNum == 0){
+					randomNum = -10000 + r.nextInt(20001);
+				}
+
+				numbers.push(randomNum);
+				mixed = 1 + r.nextInt(4);
+				if (operationtype != 5){
+					mixed = 0;
+				}
+
+				if (operationtype == 1 || mixed == 1){
+					operators.push('+');
+					questionString = questionString + " + " + randomNum ;
+				}
+				if (operationtype == 2 || mixed == 2){
+					operators.push('-');
+					questionString = questionString + " - " + randomNum ;
+				}
+
+				double top1 = numbers.peek();
+				if (operationtype == 3 || mixed == 3){
+					questionString = questionString + " * " + randomNum ;
+					numbers.pop();
+					double top2 = numbers.peek();
+					numbers.pop();
+					numbers.push(top2*top1);
+				}
+				if (operationtype == 4 || mixed == 4){
+					questionString = questionString + " / " + randomNum;
+					numbers.pop();
+					double top2 = numbers.peek();
+					numbers.pop();
+					numbers.push(top2/top1);
+				}
+			}	
+			
+			while(numbers.size()>1){
+				Character operator = operators.peekLast();
+				double top1 = numbers.peekLast();
+				if (operator == '+'){
+					numbers.removeLast();
+					double top2 = numbers.peekLast();
+					numbers.removeLast();
+					numbers.addLast(top1 + top2);	
+				}
+
+				if (operator == '-'){
+					numbers.removeLast();
+					double top2 = numbers.peekLast();
+					numbers.removeLast();
+					numbers.addLast(top1 - top2);	
+						
+				}
+				operators.removeLast();
+			}
+					
+			questionString = questionString + " = ?";
+			
+			double answer = numbers.peek();
+            answer = Math.round(answer * 1000.0) / 1000.0;
+			String reversepolarity = "" ;
+			if (answer > 0){
+				reversepolarity = "-" ;
+			}
+			if (answer < 0){
+				answer = answer * -1;
+			}
+            DecimalFormat df = new DecimalFormat("0.###");
+            String ans = df.format(answer);
+
+			if (ans.endsWith(".0")) {
+				ans = ans.substring(0, ans.length() - 2);
+			}
+			
+			String reverseans = "" + reversepolarity;
+			for (int i2 = ans.length()-1 ; i2 >= 0 ; i2 --){
+				reverseans = reverseans + ans.charAt(i2);
+			}
+			double reverseans1 = Double.parseDouble(reverseans);
+            correctAnswer = reverseans1;
+            
+            return questionString;
+        }
 
     @Override
     public void start(Stage stage) {
@@ -53,15 +158,18 @@ public class ReverseCalGUI extends Application {
             String roundsText = roundsField.getText().trim();
             String baseText = baseField.getText().trim();
             String totalText = totalField.getText().trim();
+            
 
             if (roundsText.isEmpty() || baseText.isEmpty() || totalText.isEmpty()) {
                 statusLabel.setText("Please fill in all fields.");
                 return;
             }
             try {
-                int rounds = Integer.parseInt(roundsText);
-                double base = Double.parseDouble(baseText);
-                int total = Integer.parseInt(totalText);
+                rounds = Integer.parseInt(roundsField.getText());
+                base = Double.parseDouble(baseField.getText());
+                total = Integer.parseInt(totalField.getText());
+                operationtype = operationBox.getSelectionModel().getSelectedIndex() + 1;
+
 
                 if (rounds < 1) {
                     statusLabel.setText("Rounds must be at least 1.");
@@ -73,6 +181,9 @@ public class ReverseCalGUI extends Application {
                     return;
                 }
 
+                currentRound = 1;
+                score = 0;
+
                 statusLabel.setText(
                         "Game started!\n" +
                         "Rounds: " + rounds +
@@ -81,36 +192,46 @@ public class ReverseCalGUI extends Application {
                         "\nOperation: " + operationBox.getValue()
                 );
 
+                // generate first question
+                question.setText(generateQuestion());
+
             } catch (NumberFormatException ex) {
                 statusLabel.setText("Please enter valid numbers.");
             }
         });
-
+        
         submitButton.setOnAction(e -> {
             String answerText = answerField.getText().trim();
-
             if (answerText.isEmpty()) {
-                statusLabel.setText("Please fill the answer box.");
+                status1Label.setText("Please fill the answer box.");
                 return;
             }
             try {
-                double playerAnswer = Double.parseDouble(answerField.getText());
+                double playerAnswer = Double.parseDouble(answerText);
+                if (playerAnswer == correctAnswer) {
+                    score++;
+                    result.setText("Correct!");
+                    scoreLabel.setText("Score: " + score);
+                } 
+                else {
+                    result.setText("Incorrect! Correct answer: " + correctAnswer);
+                }
+                answerField.clear();
 
-                if (playerAnswer == ){
-                    score ++;
-				    result.setText(("\nCongrats! This is the correct answer!\n"));
-            }
-			else{
-				result.setText("\nThis is incorrect, the correct answer is " +  + "\n");
-			}
+                currentRound++;
 
-                status1Label.setText(
-                        "Result " + result +
-                        "\n"
-                );
+                if (currentRound <= rounds) {
+                    question.setText(generateQuestion());
+                } 
+                else {
+                    question.setText("Game finished!");
+                    result.setText("");
+                    scoreLabel.setText("");
+                }
+ 
 
             } catch (NumberFormatException ex) {
-                statusLabel.setText("Please enter valid numbers.");
+                status1Label.setText("Please enter a valid number.");
             }
         });
 
@@ -127,7 +248,10 @@ public class ReverseCalGUI extends Application {
                 statusLabel,
                 question,
                 answerField,
-                submitButton
+                submitButton,
+                status1Label,
+                result,
+                scoreLabel
                 
         );
 
@@ -136,6 +260,7 @@ public class ReverseCalGUI extends Application {
         stage.setTitle("Reverse-Cal");
         stage.setScene(scene);
         stage.show();
+
     }
 
     public static void main(String[] args) {
