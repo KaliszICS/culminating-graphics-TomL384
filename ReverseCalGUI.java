@@ -233,9 +233,6 @@ public class ReverseCalGUI extends Application {
             }
         });
 
-        result.setText("");
-        scoreLabel.setText("");
-
         VBox root = new VBox(10);
         root.setPadding(new Insets(15));
 
