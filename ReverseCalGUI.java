@@ -225,8 +225,6 @@ public class ReverseCalGUI extends Application {
                 } 
                 else {
                     question.setText("Game finished!");
-                    result.setText("");
-                    scoreLabel.setText("");
                 }
  
 
@@ -234,6 +232,9 @@ public class ReverseCalGUI extends Application {
                 status1Label.setText("Please enter a valid number.");
             }
         });
+
+        result.setText("");
+        scoreLabel.setText("");
 
         VBox root = new VBox(10);
         root.setPadding(new Insets(15));
